@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PhishGuard - Your Shield Against Phishing Attacks</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #010a10; /* Near-black dark teal */
+            color: #e0e0e0;
+        }
+        .glass-effect {
+            background: rgba(10, 25, 35, 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(45, 212, 191, 0.15);
+        }
+        .hero-glow {
+            box-shadow: 0 0 80px rgba(20, 184, 166, 0.5), 0 0 120px rgba(45, 212, 191, 0.3);
+        }
+        .btn-primary {
+            position: relative; /* Added for ripple effect */
+            overflow: hidden;   /* Added for ripple effect */
+            background: linear-gradient(90deg, #0d9488, #2dd4bf);
+            transition: all 0.3s ease;
+            box-shadow: 0 0 20px rgba(20, 184, 166, 0.6);
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 35px rgba(45, 212, 191, 0.9);
+        }
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+        .section-title {
+            text-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
+        }
+        /* Added for Bubble/Ripple Animation */
+        .ripple {
+            position: absolute;
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.3);
+            transform: scale(0);
+            animation: ripple-effect 0.7s ease-out;
+            pointer-events: none;
+        }
+        @keyframes ripple-effect {
+            to {
+                transform: scale(4);
+                opacity: 0;
+            }
+        }
+        .attack-card:hover .attack-icon {
+            transform: scale(1.1);
+            filter: drop-shadow(0 0 15px rgba(45, 212, 191, 0.9));
+        }
+        .faq-item {
+            transition: background-color 0.3s ease;
+        }
+        .faq-item.open {
+            background-color: rgba(20, 184, 166, 0.1);
+        }
+        .faq-answer {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-in-out;
+        }
+        .faq-item.open .faq-answer {
+            max-height: 500px;
+        }
+        .faq-item.open .faq-icon {
+            transform: rotate(180deg);
+        }
+        .faq-icon {
+            transition: transform 0.3s ease;
+        }
+        .reveal {
+            opacity: 0;
+            transform: translateY(50px);
+            transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+        }
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        #background-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -10;
+        }
+        #cursor-spotlight {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(45, 212, 191, 0.08) 0%, rgba(45, 212, 191, 0) 60%);
+            border-radius: 50%;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            z-index: -1;
+            transition: transform 0.2s ease-out, opacity 0.3s;
+            opacity: 0;
+        }
+        body:hover #cursor-spotlight {
+            opacity: 1;
+        }
+        /* Added for URL/File Checker */
+        .tab-btn {
+            transition: all 0.3s ease;
+            border-bottom: 2px solid transparent;
+        }
+        .tab-btn.active {
+            color: #2dd4bf; /* teal-400 */
+            border-bottom-color: #2dd4bf;
+        }
+        .file-drop-zone {
+            border-color: #374151; /* gray-700 */
+            transition: all 0.3s ease;
+        }
+        .file-drop-zone.dragover {
+            border-color: #2dd4bf; /* teal-400 */
+            background-color: rgba(20, 184, 166, 0.1);
+        }
+        .result-safe { color: #2dd4bf; } /* teal-400 */
+        .result-malicious { color: #f43f5e; } /* rose-500 */
+        .result-warning { color: #facc15; } /* yellow-400 */
+        .result-checking { color: #60a5fa; } /* blue-400 */
+
+        .loader-dots span {
+            animation: blink 1.4s infinite both;
+        }
+        .loader-dots span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        .loader-dots span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+        @keyframes blink {
+            0%, 80%, 100% { opacity: 0; }
+            40% { opacity: 1; }
+        }
+        /* Added for Score Display */
+        .score-display {
+            font-weight: 700;
+            font-size: 1.875rem; /* text-3xl */
+        }
+        .score-bar-container {
+            max-width: 24rem; /* max-w-sm */
+            margin-left: auto;
+            margin-right: auto;
+            width: 100%;
+            background-color: #1f2937; /* gray-800 */
+            border-radius: 9999px;
+            overflow: hidden;
+            margin-top: 0.75rem;
+        }
+        .score-bar {
+            height: 10px;
+            border-radius: 9999px;
+            transition: width 0.8s ease-out;
+            width: 0%; /* Start at 0 width */
+        }
+        .score-bar.high { background-color: #2dd4bf; } /* teal-400 */
+        .score-bar.medium { background-color: #facc15; } /* yellow-400 */
+        .score-bar.low { background-color: #f43f5e; } /* rose-500 */
+    </style>
+</head>
+<body class="overflow-x-hidden">
+
+    <div id="cursor-spotlight"></div>
+    <canvas id="background-canvas"></canvas>
+
+    <div class="absolute top-0 left-0 w-full h-full z-[-5] overflow-hidden">
+        <div class="absolute top-[-20%] left-[-10%] w-96 h-96 bg-teal-600 rounded-full filter blur-3xl opacity-10 animate-pulse"></div>
+        <div class="absolute bottom-[-20%] right-[-10%] w-96 h-96 bg-cyan-600 rounded-full filter blur-3xl opacity-10 animate-pulse animation-delay-4000"></div>
+    </div>
+
+    <header class="fixed top-0 left-0 w-full glass-effect z-50">
+        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <a href="#" class="text-2xl font-bold text-white tracking-wider">
+                Phish<span class="text-teal-400">Guard</span>
+            </a>
+            <div class="hidden md:flex items-center space-x-8">
+                <a href="#about" class="text-gray-300 hover:text-teal-400 transition">About Phishing</a>
+                <a href="#types" class="text-gray-300 hover:text-teal-400 transition">Attack Types</a>
+                <a href="#prevention" class="text-gray-300 hover:text-teal-400 transition">Prevention</a>
+                <a href="#" id="feedback-btn" class="text-gray-300 hover:text-teal-400 transition">Feedback</a>
+                <a href="#download" class="btn-ripple relative overflow-hidden bg-teal-600 hover:bg-teal-500 text-white font-bold py-2 px-4 rounded-lg transition">Get Extension</a>
+            </div>
+            <button id="mobile-menu-button" class="md:hidden text-white">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+                </svg>
+            </button>
+        </nav>
+        <div id="mobile-menu" class="hidden md:hidden px-6 pb-4">
+             <a href="#about" class="block py-2 text-gray-300 hover:text-teal-400 transition">About Phishing</a>
+             <a href="#types" class="block py-2 text-gray-300 hover:text-teal-400 transition">Attack Types</a>
+             <a href="#prevention" class="block py-2 text-gray-300 hover:text-teal-400 transition">Prevention</a>
+             <a href="#" id="mobile-feedback-btn" class="block py-2 text-gray-300 hover:text-teal-400 transition">Feedback</a>
+             <a href="#download" class="btn-ripple relative overflow-hidden block mt-2 bg-teal-600 hover:bg-teal-500 text-white text-center font-bold py-2 px-4 rounded-lg transition">Get Extension</a>
+        </div>
+    </header>
+
+    <main>
+        <section class="min-h-screen flex items-center pt-20">
+            <div class="container mx-auto px-6 text-center">
+                <div class="max-w-4xl mx-auto">
+                    <h1 class="text-4xl md:text-6xl lg:text-7xl font-black text-white mb-4 section-title leading-tight reveal">
+                        Next-Generation Phishing Defense, Powered by AI.
+                    </h1>
+                    <p class="text-lg md:text-xl text-gray-300 mb-8 max-w-2xl mx-auto reveal" style="transition-delay: 0.2s;">
+                        Traditional defenses can't keep up. PhishGuard leverages a cutting-edge AI engine to analyze and neutralize phishing threats in real-time, offering intelligent protection far beyond standard blocklists.
+                    </p>
+                    <a href="#download" class="btn-ripple btn-primary text-white font-bold text-lg py-4 px-8 rounded-full inline-block reveal" style="transition-delay: 0.4s;">
+                        Secure Your Browser Now
+                    </a>
+                </div>
+                <div class="mt-16 w-full max-w-4xl mx-auto p-2 rounded-2xl hero-glow glass-effect reveal" style="transition-delay: 0.6s;">
+                    <img src="https://placehold.co/1200x600/010a10/e0e0e0?text=AI-Powered+Phishing+Detection" alt="AI-Powered Phishing Detection Extension Showcase" class="rounded-xl w-full">
+                </div>
+            </div>
+        </section>
+
+        <section id="url-checker" class="py-20 -mt-16">
+            <div class="container mx-auto px-6">
+                <div class="glass-effect rounded-2xl p-8 md:p-12 shadow-lg reveal">
+                    <div class="max-w-xl mx-auto text-center">
+                         <h2 class="text-2xl md:text-4xl font-bold text-white section-title mb-4">Real-Time Threat Analysis</h2>
+                         <p class="text-gray-400 mb-8">Choose a method below to have our AI engine analyze a potential threat.</p>
+                        
+                        <!-- Tabs -->
+                        <div class="flex justify-center border-b border-gray-700 mb-6">
+                            <button id="url-tab" class="tab-btn active text-lg font-semibold py-3 px-6 text-gray-400">Check a URL</button>
+                            <button id="file-tab" class="tab-btn text-lg font-semibold py-3 px-6 text-gray-400">Check a File</button>
+                        </div>
+                    </div>
+                   
+                    <!-- URL Checker Content -->
+                    <div id="url-checker-content" class="">
+                        <div class="flex flex-col sm:flex-row gap-4 max-w-xl mx-auto">
+                            <input type="text" id="url-input" placeholder="https://example.com" class="flex-grow bg-gray-900/50 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-teal-500 transition">
+                            <button id="check-url-btn" class="btn-ripple btn-primary text-white font-bold py-3 px-8 rounded-lg">Analyze URL</button>
+                        </div>
+                        <div id="url-result" class="mt-6 text-lg min-h-[6rem] text-center"></div>
+                    </div>
+
+                    <!-- File Checker Content -->
+                    <div id="file-checker-content" class="hidden">
+                        <div class="max-w-xl mx-auto">
+                            <label for="file-upload" id="file-drop-zone" class="file-drop-zone flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-lg cursor-pointer">
+                                <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                                    <svg class="w-10 h-10 mb-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-4-4V6a4 4 0 014-4h2a4 4 0 014 4v6m-6 4h4m4 0h-4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
+                                    <p class="mb-2 text-sm text-gray-500"><span class="font-semibold">Click to upload</span> or drag and drop</p>
+                                    <p class="text-xs text-gray-500">Suspicious documents, images, or files</p>
+                                </div>
+                                <input id="file-upload" type="file" class="hidden" />
+                            </label>
+                            <div id="file-result" class="mt-6 text-lg min-h-[6rem] text-center"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="about" class="py-20">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-12 reveal">
+                    <h2 class="text-3xl md:text-5xl font-bold text-white section-title">What is Phishing?</h2>
+                    <p class="text-teal-300 mt-2">The Deceptive Art of Digital Theft</p>
+                </div>
+                <div class="max-w-4xl mx-auto glass-effect p-8 rounded-2xl text-center reveal">
+                    <p class="text-lg text-gray-300 leading-relaxed">
+                        Phishing is a cybercrime where attackers, disguised as a trustworthy entity in an electronic communication, attempt to trick individuals into revealing sensitive information. This can include usernames, passwords, credit card details, or other confidential data. They use deceptive emails, websites, and text messages to lure unsuspecting victims, often creating a sense of urgency or fear to manipulate them into acting quickly.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <section id="types" class="py-20">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-12 reveal">
+                    <h2 class="text-3xl md:text-5xl font-bold text-white section-title">Anatomy of an Attack</h2>
+                    <p class="text-teal-300 mt-2">Know Your Enemy: Common Phishing Types</p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <div class="attack-card glass-effect p-8 rounded-2xl text-center transform transition-transform hover:-translate-y-2 reveal">
+                        <div class="attack-icon text-5xl text-teal-400 mb-4 inline-block transition-transform">🎣</div>
+                        <h3 class="text-2xl font-bold text-white mb-2">Deceptive Phishing</h3>
+                        <p class="text-gray-400">The most common type, where attackers impersonate a legitimate company to steal login credentials. These emails are sent out to a wide audience.</p>
+                    </div>
+                    <div class="attack-card glass-effect p-8 rounded-2xl text-center transform transition-transform hover:-translate-y-2 reveal" style="transition-delay: 0.1s;">
+                        <div class="attack-icon text-5xl text-teal-400 mb-4 inline-block transition-transform">🎯</div>
+                        <h3 class="text-2xl font-bold text-white mb-2">Spear Phishing</h3>
+                        <p class="text-gray-400">A targeted attack that uses personal information about the victim to appear more credible. This requires more research by the attacker.</p>
+                    </div>
+                    <div class="attack-card glass-effect p-8 rounded-2xl text-center transform transition-transform hover:-translate-y-2 reveal" style="transition-delay: 0.2s;">
+                        <div class="attack-icon text-5xl text-teal-400 mb-4 inline-block transition-transform">🐋</div>
+                        <h3 class="text-2xl font-bold text-white mb-2">Whaling</h3>
+                        <p class="text-gray-400">A form of spear phishing aimed at high-profile targets like CEOs or executives, often with the goal of financial fraud or data theft.</p>
+                    </div>
+                    <div class="attack-card glass-effect p-8 rounded-2xl text-center transform transition-transform hover:-translate-y-2 reveal">
+                        <div class="attack-icon text-5xl text-teal-400 mb-4 inline-block transition-transform">📱</div>
+                        <h3 class="text-2xl font-bold text-white mb-2">Smishing</h3>
+                        <p class="text-gray-400">Phishing conducted via SMS text messages. Attackers send links to fake websites or prompt users to call fraudulent numbers.</p>
+                    </div>
+                    <div class="attack-card glass-effect p-8 rounded-2xl text-center transform transition-transform hover:-translate-y-2 reveal" style="transition-delay: 0.1s;">
+                        <div class="attack-icon text-5xl text-teal-400 mb-4 inline-block transition-transform">📞</div>
+                        <h3 class="text-2xl font-bold text-white mb-2">Vishing</h3>
+                        <p class="text-gray-400">Voice phishing, where attackers use phone calls and voice messages to create a sense of urgency and trick victims into giving up info.</p>
+                    </div>
+                    <div class="attack-card glass-effect p-8 rounded-2xl text-center transform transition-transform hover:-translate-y-2 reveal" style="transition-delay: 0.2s;">
+                        <div class="attack-icon text-5xl text-teal-400 mb-4 inline-block transition-transform">🔗</div>
+                        <h3 class="text-2xl font-bold text-white mb-2">Pharming</h3>
+                        <p class="text-gray-400">A technical attack that redirects a legitimate website's traffic to a fake site by compromising DNS servers or a user's computer.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="prevention" class="py-20">
+             <div class="container mx-auto px-6">
+                <div class="text-center mb-12 reveal">
+                    <h2 class="text-3xl md:text-5xl font-bold text-white section-title">Build Your Digital Fortress</h2>
+                    <p class="text-teal-300 mt-2">Simple Steps for Powerful Protection</p>
+                </div>
+                <div class="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="glass-effect p-6 rounded-lg flex items-center space-x-4 reveal">
+                        <div class="text-3xl">🛡️</div>
+                        <div>
+                            <h4 class="font-bold text-lg text-white">Be Skeptical of Senders</h4>
+                            <p class="text-gray-400 text-sm">Always check the sender's email address. Is it from a legitimate domain?</p>
+                        </div>
+                    </div>
+                    <div class="glass-effect p-6 rounded-lg flex items-center space-x-4 reveal" style="transition-delay: 0.1s;">
+                        <div class="text-3xl">🔍</div>
+                        <div>
+                            <h4 class="font-bold text-lg text-white">Hover, Don't Click</h4>
+                            <p class="text-gray-400 text-sm">Before clicking any links, hover your mouse over them to see the actual destination URL.</p>
+                        </div>
+                    </div>
+                    <div class="glass-effect p-6 rounded-lg flex items-center space-x-4 reveal">
+                        <div class="text-3xl">🔐</div>
+                        <div>
+                            <h4 class="font-bold text-lg text-white">Use Two-Factor Authentication</h4>
+                            <p class="text-gray-400 text-sm">2FA adds a critical layer of security, even if your password is stolen.</p>
+                        </div>
+                    </div>
+                    <div class="glass-effect p-6 rounded-lg flex items-center space-x-4 reveal" style="transition-delay: 0.1s;">
+                        <div class="text-3xl">✍️</div>
+                        <div>
+                            <h4 class="font-bold text-lg text-white">Watch for Poor Grammar</h4>
+                            <p class="text-gray-400 text-sm">Legitimate companies rarely send emails with glaring spelling or grammatical errors.</p>
+                        </div>
+                    </div>
+                     <div class="glass-effect p-6 rounded-lg flex items-center space-x-4 col-span-1 md:col-span-2 reveal">
+                        <div class="text-3xl">🚀</div>
+                        <div>
+                            <h4 class="font-bold text-lg text-white">Install Our AI-Powered Extension</h4>
+                            <p class="text-gray-400 text-sm">The ultimate prevention. Our AI extension automatically detects and blocks both known and zero-day phishing sites before they can cause harm.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="download" class="py-20">
+            <div class="container mx-auto px-6">
+                <div class="glass-effect rounded-2xl p-10 md:p-16 text-center shadow-lg relative overflow-hidden reveal">
+                    <div class="absolute top-0 left-0 w-full h-full z-0 opacity-10" style="background-image: radial-gradient(#0d9488 1px, transparent 1px); background-size: 20px 20px;"></div>
+                    <div class="relative z-10">
+                        <h2 class="text-3xl md:text-5xl font-bold text-white section-title">Ready for Proactive Protection?</h2>
+                        <p class="text-lg text-gray-300 my-4 max-w-2xl mx-auto">
+                            Stop threats before they start. Install the AI-Powered Phishing Detection Extension for free and browse with confidence. Real-time scanning, AI-powered detection, and peace of mind.
+                        </p>
+                        <a href="PhishGuard.zip" download="PhishGuard.zip" class="btn-ripple btn-primary text-white font-bold text-xl py-4 px-10 rounded-full mt-4 inline-flex items-center space-x-2">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+    </svg>
+    <span>Download for Chrome</span>
+</a>
+                        <p class="text-sm text-gray-500 mt-3">Free. Secure. Powerful.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <section id="faq" class="py-20">
+            <div class="container mx-auto px-6">
+                 <div class="text-center mb-12 reveal">
+                    <h2 class="text-3xl md:text-5xl font-bold text-white section-title">Frequently Asked Questions</h2>
+                </div>
+                <div class="max-w-3xl mx-auto">
+                    <div class="faq-container space-y-4">
+                        <div class="faq-item glass-effect rounded-lg reveal">
+                            <button class="faq-question w-full flex justify-between items-center text-left text-xl font-semibold p-6">
+                                <span>What happens if I accidentally click a phishing link?</span>
+                                <span class="faq-icon text-teal-400">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                                </span>
+                            </button>
+                            <div class="faq-answer px-6 pb-6">
+                                <p class="text-gray-400">If you click a link but don't enter any information, you might be safe, but the site could still attempt to install malware. Disconnect from the internet, run a full antivirus scan, and change your important passwords immediately. If you have PhishNet Shield, the page would be blocked before it loads.</p>
+                            </div>
+                        </div>
+                        <div class="faq-item glass-effect rounded-lg reveal" style="transition-delay: 0.1s;">
+                            <button class="faq-question w-full flex justify-between items-center text-left text-xl font-semibold p-6">
+                                <span>Can I get phished on my smartphone?</span>
+                                <span class="faq-icon text-teal-400">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                                </span>
+                            </button>
+                            <div class="faq-answer px-6 pb-6">
+                                <p class="text-gray-400">Absolutely. Smishing (SMS phishing) and malicious apps are common ways attackers target mobile users. Always be cautious about links you receive in text messages and only download apps from official app stores.</p>
+                            </div>
+                        </div>
+                         <div class="faq-item glass-effect rounded-lg reveal" style="transition-delay: 0.2s;">
+                            <button class="faq-question w-full flex justify-between items-center text-left text-xl font-semibold p-6">
+                                <span>How does the AI-Powered extension work?</span>
+                                <span class="faq-icon text-teal-400">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                                </span>
+                            </button>
+                            <div class="faq-answer px-6 pb-6">
+                                <p class="text-gray-400">Our extension uses a multi-layered approach. It checks URLs against a constantly updated database of known phishing sites. Additionally, it uses AI and machine learning to analyze page structure and content in real-time to identify and block new, unknown threats before they can harm you.</p>
+                            </div>
+                        </div>
+                        <!-- FAQ Item 4 -->
+                         <div class="faq-item glass-effect rounded-lg reveal" style="transition-delay: 0.3s;">
+                            <button class="faq-question w-full flex justify-between items-center text-left text-xl font-semibold p-6">
+                                <span>Is the AI-Powered extension free?</span>
+                                <span class="faq-icon text-teal-400">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                                </span>
+                            </button>
+                            <div class="faq-answer px-6 pb-6">
+                                <p class="text-gray-400">Yes! The core features of our AI-Powered extension are completely free. We believe everyone deserves to be safe online. We may introduce premium features for advanced users in the future, but our commitment to providing powerful, free protection will always remain.</p>
+                            </div>
+                        </div>
+                        <!-- FAQ Item 5 -->
+                         <div class="faq-item glass-effect rounded-lg reveal" style="transition-delay: 0.4s;">
+                            <button class="faq-question w-full flex justify-between items-center text-left text-xl font-semibold p-6">
+                                <span>How is this different from my browser's built-in protection?</span>
+                                <span class="faq-icon text-teal-400">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                                </span>
+                            </button>
+                            <div class="faq-answer px-6 pb-6">
+                                <p class="text-gray-400">Most browsers rely on lists of known malicious sites, which can be slow to update. Our AI-powered extension goes a step further by using proactive, real-time analysis to detect brand-new, zero-day phishing threats that have never been seen before, offering a more dynamic and responsive layer of security.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="border-t border-gray-800 py-8">
+        <div class="container mx-auto px-6 text-center text-gray-500">
+            <p>&copy; 2024 PhishGuard. All Rights Reserved.</p>
+            <p class="mt-2 text-sm">Stay safe. Stay secure.</p>
+        </div>
+    </footer>
+
+    <!-- Feedback Modal -->
+    <div id="feedback-modal" class="hidden fixed inset-0 bg-black bg-opacity-70 z-[100] flex items-center justify-center p-4">
+        <div id="feedback-modal-content" class="glass-effect rounded-2xl p-8 shadow-lg w-full max-w-lg relative text-center">
+            <button id="close-modal-btn" class="absolute top-4 right-4 text-gray-400 hover:text-white transition">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+            <div id="feedback-form-container">
+                <h3 class="text-2xl font-bold text-white mb-4">Share Your Feedback</h3>
+                <p class="text-gray-400 mb-6">We'd love to hear what you think and how we can improve our extension.</p>
+                <textarea id="feedback-textarea" rows="5" class="w-full bg-gray-900/50 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-teal-500 transition" placeholder="Your feedback..."></textarea>
+                <button id="submit-feedback-btn" class="btn-ripple btn-primary text-white font-bold py-3 px-8 rounded-lg mt-6 w-full">Submit Feedback</button>
+            </div>
+            <div id="feedback-thanks-container" class="hidden">
+                 <h3 class="text-2xl font-bold text-white mb-4">Thank You!</h3>
+                 <p class="text-gray-400 mb-4">Your feedback has been submitted. We appreciate you helping us make PhishGuard better.</p>
+                 <div class="mt-4 text-left bg-gray-900/50 border border-gray-700 rounded-lg p-4 max-h-40 overflow-y-auto">
+                    <p class="text-sm font-semibold text-teal-400 mb-2">You submitted:</p>
+                    <blockquote class="text-gray-300 italic whitespace-pre-wrap" id="submitted-feedback-text"></blockquote>
+                 </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Mobile Menu Toggle
+        const mobileMenuButton = document.getElementById('mobile-menu-button');
+        const mobileMenu = document.getElementById('mobile-menu');
+        mobileMenuButton.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+        });
+
+        // FAQ Accordion
+        const faqItems = document.querySelectorAll('.faq-item');
+        faqItems.forEach(item => {
+            const question = item.querySelector('.faq-question');
+            question.addEventListener('click', () => {
+                faqItems.forEach(otherItem => {
+                    if (otherItem !== item && otherItem.classList.contains('open')) {
+                        otherItem.classList.remove('open');
+                    }
+                });
+                item.classList.toggle('open');
+            });
+        });
+
+        // Scroll Animation Logic
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                }
+            });
+        }, { threshold: 0.15 });
+        const revealElements = document.querySelectorAll('.reveal');
+        revealElements.forEach(el => observer.observe(el));
+        
+        // Mouse Hover Spotlight Effect
+        const spotlight = document.getElementById('cursor-spotlight');
+        if (spotlight) {
+            let currentX = 0, currentY = 0, targetX = 0, targetY = 0;
+            window.addEventListener('mousemove', (e) => { targetX = e.clientX; targetY = e.clientY; });
+            const smoothMove = () => {
+                currentX += (targetX - currentX) * 0.1;
+                currentY += (targetY - currentY) * 0.1;
+                spotlight.style.transform = `translate(calc(-50% + ${currentX}px), calc(-50% + ${currentY}px))`;
+                requestAnimationFrame(smoothMove);
+            };
+            smoothMove();
+        }
+
+        // Button Bubble Animation
+        const buttons = document.querySelectorAll('.btn-ripple');
+        buttons.forEach(button => {
+            button.addEventListener('click', function (e) {
+                const ripple = document.createElement('span');
+                const rect = this.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                ripple.style.left = x + 'px';
+                ripple.style.top = y + 'px';
+                ripple.classList.add('ripple');
+                
+                this.appendChild(ripple);
+                setTimeout(() => {
+                    ripple.remove();
+                }, 700);
+            });
+        });
+
+        // --- Analysis and Scoring Logic ---
+
+        function displayResult(element, score, message) {
+            let scoreColorClass, barColorClass, statusIcon;
+
+            if (score >= 85) {
+                scoreColorClass = 'result-safe';
+                barColorClass = 'high';
+                statusIcon = '✔️';
+            } else if (score >= 40) {
+                scoreColorClass = 'result-warning';
+                barColorClass = 'medium';
+                statusIcon = '⚠️';
+            } else {
+                scoreColorClass = 'result-malicious';
+                barColorClass = 'low';
+                statusIcon = '❌';
+            }
+
+            element.className = `mt-6 text-lg text-center`;
+            element.innerHTML = `
+                <div class="score-display ${scoreColorClass}">${score}/100</div>
+                <div class="font-bold mb-2">${statusIcon} ${message}</div>
+                <div class="score-bar-container">
+                    <div id="${element.id}-bar" class="score-bar ${barColorClass}"></div>
+                </div>
+            `;
+
+            // Animate the bar width after a short delay to ensure it's in the DOM
+            setTimeout(() => {
+                const bar = document.getElementById(`${element.id}-bar`);
+                if(bar) {
+                    bar.style.width = `${score}%`;
+                }
+            }, 100);
+        }
+
+        // URL Checker Logic
+        const urlInput = document.getElementById('url-input');
+        const checkUrlBtn = document.getElementById('check-url-btn');
+        const urlResult = document.getElementById('url-result');
+
+        checkUrlBtn.addEventListener('click', () => {
+            const url = urlInput.value.trim();
+            if (url === '') {
+                urlResult.textContent = "Please enter a URL.";
+                urlResult.className = "mt-6 text-lg result-warning text-center";
+                return;
+            }
+
+            urlResult.innerHTML = `<span class="result-checking">Analyzing<span class="loader-dots"><span>.</span><span>.</span><span>.</span></span></span>`;
+            urlResult.className = "mt-6 text-lg text-center";
+
+            // Simulate AI analysis with a delay
+            setTimeout(() => {
+                let score, message;
+                if (url.includes('google.com') || url.includes('youtube.com') || url.includes('github.com')) {
+                    score = Math.floor(Math.random() * 11) + 90; // 90-100
+                    message = `This URL appears to be safe.`;
+                } else if (url.includes('phishing') || url.includes('malicious') || url.includes('suspicious')) {
+                    score = Math.floor(Math.random() * 25) + 5; // 5-29
+                    message = `Threat detected! This URL is identified as a phishing site.`;
+                } else {
+                    score = Math.floor(Math.random() * 20) + 40; // 40-59
+                    message = `Potentially Unsafe: Proceed with caution.`;
+                }
+                displayResult(urlResult, score, message);
+            }, 2000);
+        });
+
+        // File Checker Logic
+        const fileTab = document.getElementById('file-tab');
+        const urlTab = document.getElementById('url-tab');
+        const urlCheckerContent = document.getElementById('url-checker-content');
+        const fileCheckerContent = document.getElementById('file-checker-content');
+        const fileDropZone = document.getElementById('file-drop-zone');
+        const fileUpload = document.getElementById('file-upload');
+        const fileResult = document.getElementById('file-result');
+
+        fileTab.addEventListener('click', () => {
+            urlCheckerContent.classList.add('hidden');
+            fileCheckerContent.classList.remove('hidden');
+            urlTab.classList.remove('active');
+            fileTab.classList.add('active');
+        });
+
+        urlTab.addEventListener('click', () => {
+            fileCheckerContent.classList.add('hidden');
+            urlCheckerContent.classList.remove('hidden');
+            fileTab.classList.remove('active');
+            urlTab.classList.add('active');
+        });
+        
+        // Drag and Drop Events
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            fileDropZone.addEventListener(eventName, e => {
+                e.preventDefault();
+                e.stopPropagation();
+            }, false);
+        });
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            fileDropZone.addEventListener(eventName, () => fileDropZone.classList.add('dragover'), false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            fileDropZone.addEventListener(eventName, () => fileDropZone.classList.remove('dragover'), false);
+        });
+        
+        fileDropZone.addEventListener('drop', e => {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            if (files && files.length > 0) {
+                analyzeFile(files[0]);
+            }
+        });
+
+        fileUpload.addEventListener('change', e => {
+            if (e.target.files && e.target.files.length > 0) {
+                analyzeFile(e.target.files[0]);
+            }
+        });
+
+        function analyzeFile(file) {
+            fileResult.innerHTML = `<span class="result-checking">Analyzing "${file.name}"<span class="loader-dots"><span>.</span><span>.</span><span>.</span></span></span>`;
+            fileResult.className = "mt-6 text-lg text-center";
+
+            setTimeout(() => {
+                const fileName = file.name.toLowerCase();
+                let score, message;
+                 if (fileName.includes('invoice') || fileName.includes('password') || fileName.includes('login.html')) {
+                    score = Math.floor(Math.random() * 25) + 10; // 10-34
+                    message = `Threat detected in "${file.name}".`;
+                } else if (fileName.endsWith('.exe') || fileName.endsWith('.js')) {
+                    score = Math.floor(Math.random() * 20) + 35; // 35-54
+                    message = `The file type of "${file.name}" can be harmful.`;
+                } else {
+                    score = Math.floor(Math.random() * 10) + 90; // 90-99
+                    message = `No immediate threats were found in "${file.name}".`;
+                }
+                displayResult(fileResult, score, message);
+            }, 2500);
+        }
+
+        // Feedback Modal Logic
+        const feedbackBtn = document.getElementById('feedback-btn');
+        const mobileFeedbackBtn = document.getElementById('mobile-feedback-btn');
+        const feedbackModal = document.getElementById('feedback-modal');
+        const closeModalBtn = document.getElementById('close-modal-btn');
+        const submitFeedbackBtn = document.getElementById('submit-feedback-btn');
+        const feedbackForm = document.getElementById('feedback-form-container');
+        const feedbackThanks = document.getElementById('feedback-thanks-container');
+        const feedbackTextarea = document.getElementById('feedback-textarea');
+
+        const openFeedbackModal = () => {
+            feedbackModal.classList.remove('hidden');
+            // Reset form state on open
+            feedbackForm.classList.remove('hidden');
+            feedbackThanks.classList.add('hidden');
+            feedbackTextarea.value = '';
+        };
+
+        const closeFeedbackModal = () => {
+            feedbackModal.classList.add('hidden');
+        };
+
+        feedbackBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            openFeedbackModal();
+        });
+
+        mobileFeedbackBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            mobileMenu.classList.add('hidden'); // Close mobile menu
+            openFeedbackModal();
+        });
+
+        closeModalBtn.addEventListener('click', closeFeedbackModal);
+
+        feedbackModal.addEventListener('click', (e) => {
+            if (e.target === feedbackModal) { // Close if clicking on the background
+                closeFeedbackModal();
+            }
+        });
+
+        submitFeedbackBtn.addEventListener('click', () => {
+            const feedbackText = feedbackTextarea.value.trim();
+            if (feedbackText === '') {
+                feedbackTextarea.focus();
+                return;
+            }
+            // Display submitted feedback
+            document.getElementById('submitted-feedback-text').textContent = feedbackText;
+
+            // Show thank you message
+            feedbackForm.classList.add('hidden');
+            feedbackThanks.classList.remove('hidden');
+
+            // Close modal after a delay
+            setTimeout(() => {
+                closeFeedbackModal();
+            }, 4000);
+        });
+
+        // Futuristic Background Animation - Plexus / Neural Network
+        document.addEventListener('DOMContentLoaded', () => {
+            const canvas = document.getElementById('background-canvas');
+            const ctx = canvas.getContext('2d');
+            let particles = [];
+            const mouse = { x: null, y: null, radius: 150 };
+
+            function resizeCanvas() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+            resizeCanvas();
+
+            window.addEventListener('resize', resizeCanvas);
+            window.addEventListener('mousemove', (event) => {
+                mouse.x = event.x;
+                mouse.y = event.y;
+            });
+            window.addEventListener('mouseout', () => {
+                mouse.x = null;
+                mouse.y = null;
+            });
+
+            class Particle {
+                constructor() {
+                    this.x = Math.random() * canvas.width;
+                    this.y = Math.random() * canvas.height;
+                    this.size = 2;
+                    this.speedX = Math.random() * 2 - 1;
+                    this.speedY = Math.random() * 2 - 1;
+                    this.color = '#0d9488'; // Teal color
+                }
+                update() {
+                    if (this.x > canvas.width || this.x < 0) this.speedX = -this.speedX;
+                    if (this.y > canvas.height || this.y < 0) this.speedY = -this.speedY;
+                    this.x += this.speedX;
+                    this.y += this.speedY;
+                }
+                draw() {
+                    ctx.fillStyle = this.color;
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+
+            function init(particleCount) {
+                particles = [];
+                for (let i = 0; i < particleCount; i++) {
+                    particles.push(new Particle());
+                }
+            }
+            
+            function connect() {
+                let opacityValue = 1;
+                for (let a = 0; a < particles.length; a++) {
+                    for (let b = a; b < particles.length; b++) {
+                        let distance = ((particles[a].x - particles[b].x) * (particles[a].x - particles[b].x)) +
+                                     ((particles[a].y - particles[b].y) * (particles[a].y - particles[b].y));
+                        if (distance < (canvas.width / 7) * (canvas.height / 7)) {
+                            opacityValue = 1 - (distance / 20000);
+                            ctx.strokeStyle = `rgba(45, 212, 191, ${opacityValue})`;
+                            ctx.lineWidth = 1;
+                            ctx.beginPath();
+                            ctx.moveTo(particles[a].x, particles[a].y);
+                            ctx.lineTo(particles[b].x, particles[b].y);
+                            ctx.stroke();
+                        }
+                    }
+                }
+                 // Connect to mouse
+                if (mouse.x !== null && mouse.y !== null) {
+                    for (let i = 0; i < particles.length; i++) {
+                        let distance = Math.sqrt(((particles[i].x - mouse.x) * (particles[i].x - mouse.x)) +
+                                               ((particles[i].y - mouse.y) * (particles[i].y - mouse.y)));
+                        if (distance < mouse.radius) {
+                             opacityValue = 1 - (distance / mouse.radius);
+                             ctx.strokeStyle = `rgba(167, 243, 208, ${opacityValue})`; // Lighter mint green
+                             ctx.lineWidth = 1;
+                             ctx.beginPath();
+                             ctx.moveTo(particles[i].x, particles[i].y);
+                             ctx.lineTo(mouse.x, mouse.y);
+                             ctx.stroke();
+                        }
+                    }
+                }
+            }
+
+            function animate() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                for (let i = 0; i < particles.length; i++) {
+                    particles[i].update();
+                    particles[i].draw();
+                }
+                connect();
+                requestAnimationFrame(animate);
+            }
+            
+            // Adjust particle count based on screen size
+            const particleCount = (canvas.width * canvas.height) / 10000;
+            init(Math.floor(particleCount));
+            animate();
+        });
+    </script>
+</body>
+</html>
+
